@@ -3,6 +3,9 @@ from discord.ext import commands
 import os
 import asyncio
 
+# Add this import
+from keep_alive import keep_alive
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -55,10 +58,10 @@ async def info(ctx):
     embed.add_field(name="Servers", value=str(len(bot.guilds)), inline=True)
     embed.add_field(name="Creator", value="You!", inline=False)
     embed.set_footer(text=f"Requested by {ctx.author}")
-    
     await ctx.send(embed=embed)
 
 async def main():
+    keep_alive()  # ← This starts the port listener
     async with bot:
         await bot.start(os.getenv("DISCORD_TOKEN"))
 
