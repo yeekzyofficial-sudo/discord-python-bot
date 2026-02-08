@@ -8,7 +8,7 @@ import time
 
 from keep_alive import keep_alive
 
-# Global variable to store start time for uptime
+# Store bot start time for uptime calculation
 start_time = None
 
 intents = discord.Intents.default()
@@ -37,6 +37,7 @@ async def on_ready():
         activity=discord.Game(name="GTA 6 Beta")
     )
     
+    # Sync slash commands globally
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} slash command(s)")
@@ -48,6 +49,10 @@ async def on_message(message):
     if message.author.bot:
         return
     await bot.process_commands(message)
+
+# ────────────────────────────────────────────────
+# Helper: Uptime formatter
+# ────────────────────────────────────────────────
 
 def get_uptime():
     if start_time is None:
@@ -150,23 +155,34 @@ async def dihmeter_prefix(ctx, member: discord.Member = None):
     SPECIAL_ID = 1323331952559919235
     
     if target.id == SPECIAL_ID:
-        inches = random.randint(800, 1000)
+        inches = random.randint(15, 20)
     else:
-        inches = random.randint(0, 1000)
+        rand = random.random()
+        
+        if rand < 0.70:           # \~70% chance
+            inches = random.randint(0, 9)
+        elif rand < 0.90:         # \~20%
+            inches = random.randint(10, 14)
+        elif rand < 0.985:        # \~8.5%
+            inches = random.randint(15, 18)
+        elif rand < 0.995:        # \~1%
+            inches = 19
+        else:                     # \~0.5% - very rare
+            inches = 20
     
     if inches == 0:
         result_text = "You have a clih not a dih 😭"
-    elif inches >= 800:
+    elif inches >= 18:
         result_text = "God-tier monster 🐉🔥"
-    elif inches >= 500:
+    elif inches >= 15:
         result_text = "Absolute unit 🏋️‍♂️"
-    elif inches >= 200:
+    elif inches >= 12:
         result_text = "Big boy energy 💪"
-    elif inches >= 50:
+    elif inches >= 8:
         result_text = "Respectable 📏"
-    elif inches >= 10:
+    elif inches >= 5:
         result_text = "Average Joe 🤝"
-    elif inches < 5:
+    elif inches >= 2:
         result_text = "Quite Small 🤏"
     else:
         result_text = "Small as fuck 🐜"
@@ -263,23 +279,34 @@ async def dihmeter_slash(interaction: discord.Interaction, user: discord.Member 
     SPECIAL_ID = 1323331952559919235
     
     if target.id == SPECIAL_ID:
-        inches = random.randint(800, 1000)
+        inches = random.randint(15, 20)
     else:
-        inches = random.randint(0, 1000)
+        rand = random.random()
+        
+        if rand < 0.70:
+            inches = random.randint(0, 9)
+        elif rand < 0.90:
+            inches = random.randint(10, 14)
+        elif rand < 0.985:
+            inches = random.randint(15, 18)
+        elif rand < 0.995:
+            inches = 19
+        else:
+            inches = 20
     
     if inches == 0:
         result_text = "You have a clih not a dih 😭"
-    elif inches >= 800:
+    elif inches >= 18:
         result_text = "God-tier monster 🐉🔥"
-    elif inches >= 500:
+    elif inches >= 15:
         result_text = "Absolute unit 🏋️‍♂️"
-    elif inches >= 200:
+    elif inches >= 12:
         result_text = "Big boy energy 💪"
-    elif inches >= 50:
+    elif inches >= 8:
         result_text = "Respectable 📏"
-    elif inches >= 10:
+    elif inches >= 5:
         result_text = "Average Joe 🤝"
-    elif inches < 5:
+    elif inches >= 2:
         result_text = "Quite Small 🤏"
     else:
         result_text = "Small as fuck 🐜"
