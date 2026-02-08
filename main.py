@@ -12,10 +12,8 @@ from keep_alive import keep_alive
 processed_messages = set()
 
 # Store deleted messages per channel (no limit)
-# channel_id → deque of (content, author, created_at, attachments list)
-deleted_messages = {}
+deleted_messages = {}  # channel_id → deque[(content, author, created_at, attachments)]
 
-# Bot start time for uptime
 start_time = None
 
 intents = discord.Intents.default()
@@ -79,8 +77,6 @@ async def on_message_delete(message: discord.Message):
         message.created_at,
         attachments
     ))
-    
-    print(f"[SNIPE] Deleted in #{message.channel.name} by {message.author}: {content[:60]}...")
 
 def get_uptime():
     if start_time is None:
@@ -198,7 +194,7 @@ async def dihmeter(ctx, member: discord.Member = None):
 
 @bot.command(name='snipe')
 async def snipe(ctx, index: int = 1):
-    """Snipe deleted messages: c.snipe or c.snipe 2, 3, etc."""
+    """Snipe deleted messages: c.snipe, c.snipe 2, c.snipe 3..."""
     channel_id = ctx.channel.id
     
     if channel_id not in deleted_messages or not deleted_messages[channel_id]:
@@ -231,8 +227,9 @@ async def snipe(ctx, index: int = 1):
 
 @bot.command(name='clearsnipe')
 async def clearsnipe(ctx):
-    """Clear all sniped messages in this channel"""
+    """Clear all sniped (deleted) messages history in this channel"""
     channel_id = ctx.channel.id
+    
     if channel_id in deleted_messages and deleted_messages[channel_id]:
         count = len(deleted_messages[channel_id])
         deleted_messages[channel_id].clear()
@@ -241,7 +238,7 @@ async def clearsnipe(ctx):
         await ctx.send("No snipe history to clear in this channel.")
 
 # ────────────────────────────────────────────────
-# START BOT
+# RUN THE BOT
 # ────────────────────────────────────────────────
 
 async def main():
