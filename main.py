@@ -5,10 +5,20 @@ import random
 import os
 import asyncio
 import time
+from collections import deque
+from datetime import datetime
 
 from keep_alive import keep_alive
 
-# Store bot start time for uptime calculation
+# Track processed IDs to prevent double execution
+processed_messages = set()
+processed_interactions = set()
+
+# Store deleted messages per channel (no limit)
+# channel_id → deque of (content, author, created_at, attachments_urls)
+deleted_messages = {}
+
+# Store bot start time for uptime
 start_time = None
 
 intents = discord.Intents.default()
@@ -47,7 +57,37 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot:
         return
+    
+    msg_id = message.id
+    if msg_id in processed_messages:
+        return
+    
+    processed_messages.add(msg_id)
+    
+    # Optional cleanup (prevents memory growth forever)
+    if len(processed_messages) > 5000:
+        processed_messages.clear()
+    
     await bot.process_commands(message)
+
+@bot.event
+async def on_message_delete(message: discord.Message):
+    if message.author.bot:
+        return
+    
+    channel_id = message.channel.id
+    
+    if channel_id not in deleted_messages:
+        deleted_messages[channel_id] = deque()  # no maxlen = unlimited
+    
+    attachments = [att.url for att in message.attachments] if message.attachments else []
+    
+    deleted_messages[channel_id].appendleft((
+        message.content or "[No text content]",
+        message.author,
+        message.created_at,
+        attachments
+    ))
 
 def get_uptime():
     if start_time is None:
@@ -149,7 +189,7 @@ async def dihmeter_prefix(ctx, member: discord.Member = None):
     SPECIAL_ID = 1323331952559919235
     
     if target.id == SPECIAL_ID:
-        inches = random.randint(15, 20)  # special user gets high values
+        inches = random.randint(15, 20)
     else:
         rand = random.random()
         if rand < 0.70:
@@ -161,7 +201,7 @@ async def dihmeter_prefix(ctx, member: discord.Member = None):
         elif rand < 0.995:
             inches = 19
         else:
-            inches = 20  # very rare
+            inches = 20
     
     if inches == 0:
         result_text = "You have a clih not a dih 😭"
@@ -192,6 +232,49 @@ async def dihmeter_prefix(ctx, member: discord.Member = None):
     )
     embed.set_thumbnail(url=target.display_avatar.url)
     embed.set_footer(text="Dih Meter")
+    await ctx.send(embed=embed)
+
+@bot.command(name='snipe')
+async def snipe(ctx, index: int = 1):
+    """Shows recently deleted messages. Use c.snipe 2, c.snipe 3, etc."""
+    channel_id = ctx.channel.id
+    
+    if channel_id not in deleted_messages or not deleted_messages[channel_id]:
+        await ctx.send("No recently deleted messages to snipe in this channel.")
+        return
+    
+    history = deleted_messages[channel_id]
+    
+    if index < 1 or index > len(history):
+        await ctx.send(f"Invalid index. Only {len(history)} deleted message(s) available.")
+        return
+    
+    content, author, timestamp, attachments = history[index - 1]
+    
+    embed = discord.Embed(
+        title="Sniped Message",
+        description=content,
+        color=0xe74c3c,
+        timestamp=timestamp
+    )
+    
+    embed.set_author(
+        name=f"{author.display_name} ({author})",
+        icon_url=author.display_avatar.url
+    )
+    
+    embed.set_footer(text=f"Message {index}/{len(history)} • Deleted")
+    
+    if attachments:
+        embed.add_field(
+            name="Attachments",
+            value="\n".join(attachments[:5]),
+            inline=False
+        )
+        # Show first image if possible
+        if attachments and attachments[0].lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            embed.set_image(url=attachments[0])
+    
     await ctx.send(embed=embed)
 
 # ────────────────────────────────────────────────
