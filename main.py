@@ -1,12 +1,14 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
+import random
 import os
 import asyncio
 import time
 
 from keep_alive import keep_alive
 
-# Global variable to store start time
+# Global variable to store start time for uptime
 start_time = None
 
 intents = discord.Intents.default()
@@ -25,17 +27,16 @@ async def on_ready():
     global start_time
     start_time = time.time()
     
-    print(f"───────────────────────────────────────────────")
+    print("───────────────────────────────────────────────")
     print(f"Logged in as   : {bot.user}")
     print(f"User ID        : {bot.user.id}")
     print(f"Guilds         : {len(bot.guilds)}")
-    print(f"───────────────────────────────────────────────")
+    print("───────────────────────────────────────────────")
     
     await bot.change_presence(
         activity=discord.Game(name="GTA 6 Beta")
     )
     
-    # Sync slash commands (important!)
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} slash command(s)")
@@ -73,7 +74,10 @@ def get_uptime():
     
     return ", ".join(parts)
 
-# ── Prefix commands (c.) ──
+# ────────────────────────────────────────────────
+# PREFIX COMMANDS (c.)
+# ────────────────────────────────────────────────
+
 @bot.command(name='ping')
 async def ping_prefix(ctx):
     latency = round(bot.latency * 1000)
@@ -107,7 +111,84 @@ async def timehosted_prefix(ctx):
     embed.set_footer(text=f"Requested by {ctx.author}")
     await ctx.send(embed=embed)
 
-# ── Slash commands (/) ──
+@bot.command(name='gaymeter')
+async def gaymeter_prefix(ctx, member: discord.Member = None):
+    target = member or ctx.author
+    SPECIAL_ID = 1323331952559919235
+    
+    if target.id == SPECIAL_ID:
+        percentage = 0
+    else:
+        percentage = random.randint(0, 100)
+    
+    if percentage == 0:
+        result_text = "Fully Straight! 📏"
+    elif percentage > 80:
+        result_text = "Stay fabulous! ✨"
+    elif percentage > 50:
+        result_text = "Getting there! 💅"
+    else:
+        result_text = "Quite straight! 📏"
+    
+    embed = discord.Embed(
+        title="🌈 Gay Meter",
+        color=0xFF5500,
+        description=(
+            f"Checking the **Gay** percentage for **{target.display_name}**...\n\n"
+            f"**Result:**\n"
+            f"{percentage}% Gay 🏳️‍🌈\n\n"
+            f"{result_text}"
+        )
+    )
+    embed.set_thumbnail(url=target.display_avatar.url)
+    embed.set_footer(text="Gay Meter")
+    await ctx.send(embed=embed)
+
+@bot.command(name='dihmeter')
+async def dihmeter_prefix(ctx, member: discord.Member = None):
+    target = member or ctx.author
+    SPECIAL_ID = 1323331952559919235
+    
+    if target.id == SPECIAL_ID:
+        inches = random.randint(800, 1000)
+    else:
+        inches = random.randint(0, 1000)
+    
+    if inches == 0:
+        result_text = "You have a clih not a dih 😭"
+    elif inches >= 800:
+        result_text = "God-tier monster 🐉🔥"
+    elif inches >= 500:
+        result_text = "Absolute unit 🏋️‍♂️"
+    elif inches >= 200:
+        result_text = "Big boy energy 💪"
+    elif inches >= 50:
+        result_text = "Respectable 📏"
+    elif inches >= 10:
+        result_text = "Average Joe 🤝"
+    elif inches < 5:
+        result_text = "Quite Small 🤏"
+    else:
+        result_text = "Small as fuck 🐜"
+    
+    embed = discord.Embed(
+        title="Dih Meter",
+        color=0xFF5500,
+        description=(
+            f"Checking the **Dih** Inches for **{target.display_name}**...\n\n"
+            f"**Result:**\n"
+            f"{inches} Inches\n\n"
+            f"{result_text}"
+        )
+    )
+    embed.set_thumbnail(url=target.display_avatar.url)
+    embed.set_footer(text="Dih Meter")
+    await ctx.send(embed=embed)
+
+# ────────────────────────────────────────────────
+# SLASH COMMANDS (/)
+# ────────────────────────────────────────────────
+
 @bot.tree.command(name="ping", description="Check the bot's latency")
 async def ping_slash(interaction: discord.Interaction):
     latency = round(bot.latency * 1000)
@@ -140,6 +221,86 @@ async def timehosted_slash(interaction: discord.Interaction):
     )
     embed.set_footer(text=f"Requested by {interaction.user}")
     await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="gaymeter", description="Check someone's gay percentage 🌈")
+@app_commands.describe(user="The person to check (optional)")
+async def gaymeter_slash(interaction: discord.Interaction, user: discord.Member = None):
+    target = user or interaction.user
+    SPECIAL_ID = 1323331952559919235
+    
+    if target.id == SPECIAL_ID:
+        percentage = 0
+    else:
+        percentage = random.randint(0, 100)
+    
+    if percentage == 0:
+        result_text = "Fully Straight! 📏"
+    elif percentage > 80:
+        result_text = "Stay fabulous! ✨"
+    elif percentage > 50:
+        result_text = "Getting there! 💅"
+    else:
+        result_text = "Quite straight! 📏"
+    
+    embed = discord.Embed(
+        title="🌈 Gay Meter",
+        color=0xFF5500,
+        description=(
+            f"Checking the **Gay** percentage for **{target.display_name}**...\n\n"
+            f"**Result:**\n"
+            f"{percentage}% Gay 🏳️‍🌈\n\n"
+            f"{result_text}"
+        )
+    )
+    embed.set_thumbnail(url=target.display_avatar.url)
+    embed.set_footer(text="Gay Meter")
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="dihmeter", description="Check someone's dih size in inches 🍆")
+@app_commands.describe(user="The person to check (optional)")
+async def dihmeter_slash(interaction: discord.Interaction, user: discord.Member = None):
+    target = user or interaction.user
+    SPECIAL_ID = 1323331952559919235
+    
+    if target.id == SPECIAL_ID:
+        inches = random.randint(800, 1000)
+    else:
+        inches = random.randint(0, 1000)
+    
+    if inches == 0:
+        result_text = "You have a clih not a dih 😭"
+    elif inches >= 800:
+        result_text = "God-tier monster 🐉🔥"
+    elif inches >= 500:
+        result_text = "Absolute unit 🏋️‍♂️"
+    elif inches >= 200:
+        result_text = "Big boy energy 💪"
+    elif inches >= 50:
+        result_text = "Respectable 📏"
+    elif inches >= 10:
+        result_text = "Average Joe 🤝"
+    elif inches < 5:
+        result_text = "Quite Small 🤏"
+    else:
+        result_text = "Small as fuck 🐜"
+    
+    embed = discord.Embed(
+        title="Dih Meter",
+        color=0xFF5500,
+        description=(
+            f"Checking the **Dih** Inches for **{target.display_name}**...\n\n"
+            f"**Result:**\n"
+            f"{inches} Inches\n\n"
+            f"{result_text}"
+        )
+    )
+    embed.set_thumbnail(url=target.display_avatar.url)
+    embed.set_footer(text="Dih Meter")
+    await interaction.response.send_message(embed=embed)
+
+# ────────────────────────────────────────────────
+# RUN THE BOT
+# ────────────────────────────────────────────────
 
 async def main():
     keep_alive()
