@@ -6,13 +6,11 @@ import os
 import asyncio
 import time
 from collections import deque
-from datetime import datetime
 
 from keep_alive import keep_alive
 
 # Track processed IDs to prevent double execution
 processed_messages = set()
-processed_interactions = set()
 
 # Store deleted messages per channel (no limit)
 # channel_id → deque of (content, author, created_at, attachments_urls)
@@ -64,7 +62,6 @@ async def on_message(message):
     
     processed_messages.add(msg_id)
     
-    # Optional cleanup (prevents memory growth forever)
     if len(processed_messages) > 5000:
         processed_messages.clear()
     
@@ -78,7 +75,7 @@ async def on_message_delete(message: discord.Message):
     channel_id = message.channel.id
     
     if channel_id not in deleted_messages:
-        deleted_messages[channel_id] = deque()  # no maxlen = unlimited
+        deleted_messages[channel_id] = deque()
     
     attachments = [att.url for att in message.attachments] if message.attachments else []
     
@@ -235,7 +232,7 @@ async def dihmeter_prefix(ctx, member: discord.Member = None):
     await ctx.send(embed=embed)
 
 @bot.command(name='snipe')
-async def snipe(ctx, index: int = 1):
+async def snipe_prefix(ctx, index: int = 1):
     """Shows recently deleted messages. Use c.snipe 2, c.snipe 3, etc."""
     channel_id = ctx.channel.id
     
@@ -246,7 +243,7 @@ async def snipe(ctx, index: int = 1):
     history = deleted_messages[channel_id]
     
     if index < 1 or index > len(history):
-        await ctx.send(f"Invalid index. Only {len(history)} deleted message(s) available.")
+        await ctx.send(f"Only {len(history)} deleted message(s) available.")
         return
     
     content, author, timestamp, attachments = history[index - 1]
@@ -271,11 +268,21 @@ async def snipe(ctx, index: int = 1):
             value="\n".join(attachments[:5]),
             inline=False
         )
-        # Show first image if possible
         if attachments and attachments[0].lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
             embed.set_image(url=attachments[0])
     
     await ctx.send(embed=embed)
+
+@bot.command(name='clearsnipe')
+async def clearsnipe_prefix(ctx):
+    """Clears all sniped (deleted) messages history for this channel."""
+    channel_id = ctx.channel.id
+    
+    if channel_id in deleted_messages:
+        deleted_messages[channel_id].clear()
+        await ctx.send("🗑️ Snipe history cleared for this channel.")
+    else:
+        await ctx.send("No snipe history to clear in this channel.")
 
 # ────────────────────────────────────────────────
 # SLASH COMMANDS (/)
@@ -399,6 +406,58 @@ async def dihmeter_slash(interaction: discord.Interaction, user: discord.Member 
     embed.set_thumbnail(url=target.display_avatar.url)
     embed.set_footer(text="Dih Meter")
     await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="snipe", description="Snipe the most recently deleted message")
+@app_commands.describe(index="Which deleted message to show (1 = most recent)")
+async def snipe_slash(interaction: discord.Interaction, index: int = 1):
+    channel_id = interaction.channel_id
+    
+    if channel_id not in deleted_messages or not deleted_messages[channel_id]:
+        await interaction.response.send_message("No recently deleted messages to snipe here.", ephemeral=True)
+        return
+    
+    history = deleted_messages[channel_id]
+    
+    if index < 1 or index > len(history):
+        await interaction.response.send_message(f"Only {len(history)} deleted message(s) available.", ephemeral=True)
+        return
+    
+    content, author, timestamp, attachments = history[index - 1]
+    
+    embed = discord.Embed(
+        title="Sniped Message",
+        description=content,
+        color=0xe74c3c,
+        timestamp=timestamp
+    )
+    
+    embed.set_author(
+        name=f"{author.display_name} ({author})",
+        icon_url=author.display_avatar.url
+    )
+    
+    embed.set_footer(text=f"Message {index}/{len(history)} • Deleted")
+    
+    if attachments:
+        embed.add_field(
+            name="Attachments",
+            value="\n".join(attachments[:5]),
+            inline=False
+        )
+        if attachments and attachments[0].lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            embed.set_image(url=attachments[0])
+    
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="clearsnipe", description="Clear all sniped messages history in this channel")
+async def clearsnipe_slash(interaction: discord.Interaction):
+    channel_id = interaction.channel_id
+    
+    if channel_id in deleted_messages and deleted_messages[channel_id]:
+        deleted_messages[channel_id].clear()
+        await interaction.response.send_message("🗑️ Snipe history cleared for this channel.")
+    else:
+        await interaction.response.send_message("No snipe history to clear in this channel.", ephemeral=True)
 
 # ────────────────────────────────────────────────
 # RUN THE BOT
